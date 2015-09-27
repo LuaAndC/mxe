@@ -1,0 +1,53 @@
+From 5a01ba950da186ddf5b9a45a1533420bf8974baf Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Sun, 27 Sep 2015 15:55:12 +0100
+Subject: [PATCH] do no include netinet/in.h
+
+---
+ configure              | 2 +-
+ src/network/network.cc | 1 -
+ src/network/network.h  | 3 ++-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/configure b/configure
+index ba27ef9..a14107c 100755
+--- a/configure
++++ b/configure
+@@ -6544,7 +6544,7 @@ fi
+ done
+ 
+ 
+-for ac_header in fcntl.h plibc/langinfo.h limits.h locale.h winsock2.h ws2tcpip.h netinet/in.h stddef.h stdint.h inttypes.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/stat.h sys/time.h termios.h unistd.h wchar.h wctype.h
++for ac_header in fcntl.h plibc/langinfo.h limits.h locale.h winsock2.h ws2tcpip.h stddef.h stdint.h inttypes.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/stat.h sys/time.h termios.h unistd.h wchar.h wctype.h
+ do :
+   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+diff --git a/src/network/network.cc b/src/network/network.cc
+index 8397b21..7cfb309 100644
+--- a/src/network/network.cc
++++ b/src/network/network.cc
+@@ -39,7 +39,6 @@
+ #endif
+ #include <winsock2.h>
+ #include <ws2tcpip.h>
+-#include <netinet/in.h>
+ #include <assert.h>
+ #include <errno.h>
+ #include <unistd.h>
+diff --git a/src/network/network.h b/src/network/network.h
+index 6672572..d80293b 100644
+--- a/src/network/network.h
++++ b/src/network/network.h
+@@ -36,7 +36,8 @@
+ #include <stdint.h>
+ #include <deque>
+ #include <sys/socket.h>
+-#include <netinet/in.h>
++#include <winsock2.h>
++#include <ws2tcpip.h>
+ #include <string>
+ #include <math.h>
+ #include <vector>
+-- 
+2.1.4
+

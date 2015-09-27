@@ -1,0 +1,79 @@
+From ef341b0566d2c69dab0a4758000191471f805140 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Sun, 27 Sep 2015 16:38:08 +0100
+Subject: [PATCH] unsetenv -> putenv
+
+---
+ src/frontend/mosh-client.cc |  2 +-
+ src/frontend/mosh-server.cc |  2 +-
+ src/util/locale_utils.cc    | 30 +++++++++++++++---------------
+ 3 files changed, 17 insertions(+), 17 deletions(-)
+
+diff --git a/src/frontend/mosh-client.cc b/src/frontend/mosh-client.cc
+index 3523a71..d087b89 100644
+--- a/src/frontend/mosh-client.cc
++++ b/src/frontend/mosh-client.cc
+@@ -155,7 +155,7 @@ int main( int argc, char *argv[] )
+     exit( 1 );
+   }
+ 
+-  if ( unsetenv( "MOSH_KEY" ) < 0 ) {
++  if ( putenv( "MOSH_KEY=" ) < 0 ) {
+     perror( "unsetenv" );
+     exit( 1 );
+   }
+diff --git a/src/frontend/mosh-server.cc b/src/frontend/mosh-server.cc
+index 510a13d..2e127c6 100644
+--- a/src/frontend/mosh-server.cc
++++ b/src/frontend/mosh-server.cc
+@@ -471,7 +471,7 @@ static int run_server( const char *desired_ip, const char *desired_port,
+     }
+ 
+     /* clear STY environment variable so GNU screen regards us as top level */
+-    if ( unsetenv( "STY" ) < 0 ) {
++    if ( putenv( "STY=" ) < 0 ) {
+       perror( "unsetenv" );
+       exit( 1 );
+     }
+diff --git a/src/util/locale_utils.cc b/src/util/locale_utils.cc
+index 7f1383b..a0dbd64 100644
+--- a/src/util/locale_utils.cc
++++ b/src/util/locale_utils.cc
+@@ -112,19 +112,19 @@ void set_native_locale( void ) {
+ }
+ 
+ void clear_locale_variables( void ) {
+-  unsetenv( "LANG" );
+-  unsetenv( "LANGUAGE" );
+-  unsetenv( "LC_CTYPE" );
+-  unsetenv( "LC_NUMERIC" );
+-  unsetenv( "LC_TIME" );
+-  unsetenv( "LC_COLLATE" );
+-  unsetenv( "LC_MONETARY" );
+-  unsetenv( "LC_MESSAGES" );
+-  unsetenv( "LC_PAPER" );
+-  unsetenv( "LC_NAME" );
+-  unsetenv( "LC_ADDRESS" );
+-  unsetenv( "LC_TELEPHONE" );
+-  unsetenv( "LC_MEASUREMENT" );
+-  unsetenv( "LC_IDENTIFICATION" );
+-  unsetenv( "LC_ALL" );
++  putenv( "LANG=" );
++  putenv( "LANGUAGE=" );
++  putenv( "LC_CTYPE=" );
++  putenv( "LC_NUMERIC=" );
++  putenv( "LC_TIME=" );
++  putenv( "LC_COLLATE=" );
++  putenv( "LC_MONETARY=" );
++  putenv( "LC_MESSAGES=" );
++  putenv( "LC_PAPER=" );
++  putenv( "LC_NAME=" );
++  putenv( "LC_ADDRESS=" );
++  putenv( "LC_TELEPHONE=" );
++  putenv( "LC_MEASUREMENT=" );
++  putenv( "LC_IDENTIFICATION=" );
++  putenv( "LC_ALL=" );
+ }
+-- 
+2.1.4
+

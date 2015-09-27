@@ -1,0 +1,24 @@
+From 443f5ebaebfdbcc221f5f5534baca6ef3ca483cf Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Sun, 27 Sep 2015 16:42:20 +0100
+Subject: [PATCH] don't include sys/stropts.h
+
+---
+ src/util/pty_compat.cc | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/src/util/pty_compat.cc b/src/util/pty_compat.cc
+index e251f32..42f1159 100644
+--- a/src/util/pty_compat.cc
++++ b/src/util/pty_compat.cc
+@@ -40,7 +40,6 @@
+ #include <fcntl.h>
+ #include <winsock2.h>
+ #include <ws2tcpip.h>
+-#include <sys/stropts.h>
+ #include <ncurses/ncurses_mingw.h>
+ 
+ #include "pty_compat.h"
+-- 
+2.1.4
+

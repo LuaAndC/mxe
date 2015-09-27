@@ -1,0 +1,67 @@
+From 60bb33bb0cf4f9bf5004021a9e02c86cff991bd2 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Sun, 27 Sep 2015 16:53:39 +0100
+Subject: [PATCH] select.h: remove not implemented code (signals)
+
+---
+ src/util/select.h | 21 +--------------------
+ 1 file changed, 1 insertion(+), 20 deletions(-)
+
+diff --git a/src/util/select.h b/src/util/select.h
+index eb55b0b..b335060 100644
+--- a/src/util/select.h
++++ b/src/util/select.h
+@@ -74,7 +74,6 @@ private:
+     FD_ZERO( &error_fds );
+ 
+     clear_got_signal();
+-    fatal_assert( 0 == sigemptyset( &empty_sigset ) );
+   }
+ 
+   void clear_got_signal( void )
+@@ -102,22 +101,6 @@ public:
+ 
+   static void add_signal( int signum )
+   {
+-    fatal_assert( signum >= 0 );
+-    fatal_assert( signum <= MAX_SIGNAL_NUMBER );
+-
+-    /* Block the signal so we don't get it outside of pselect(). */
+-    sigset_t to_block;
+-    fatal_assert( 0 == sigemptyset( &to_block ) );
+-    fatal_assert( 0 == sigaddset( &to_block, signum ) );
+-    fatal_assert( 0 == sigprocmask( SIG_BLOCK, &to_block, NULL ) );
+-
+-    /* Register a handler, which will only be called when pselect()
+-       is interrupted by a (possibly queued) signal. */
+-    struct sigaction sa;
+-    sa.sa_flags = 0;
+-    sa.sa_handler = &handle_signal;
+-    fatal_assert( 0 == sigfillset( &sa.sa_mask ) );
+-    fatal_assert( 0 == sigaction( signum, &sa, NULL ) );
+   }
+ 
+   /* timeout unit: milliseconds; negative timeout means wait forever */
+@@ -142,7 +125,6 @@ public:
+ #else
+     struct timeval tv;
+     struct timeval *tvp = NULL;
+-    sigset_t old_sigset;
+ 
+     if ( timeout >= 0 ) {
+       tv.tv_sec  = timeout / 1000;
+@@ -150,10 +132,9 @@ public:
+       tvp = &tv;
+     }
+ 
+-    int ret = sigprocmask( SIG_SETMASK, &empty_sigset, &old_sigset );
++    int ret = 0;
+     if ( ret != -1 ) {
+       ret = ::select( max_fd + 1, &read_fds, NULL, &error_fds, tvp );
+-      sigprocmask( SIG_SETMASK, &old_sigset, NULL );
+     }
+ #endif
+ 
+-- 
+2.1.4
+

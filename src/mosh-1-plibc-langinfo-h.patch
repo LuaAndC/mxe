@@ -1,0 +1,39 @@
+From f0a3a5744a7b4fa2f968bb305a6cf55c20c3b744 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Sun, 27 Sep 2015 15:43:55 +0100
+Subject: [PATCH] langinfo.h -> plibc/langinfo.h
+
+---
+ configure                | 2 +-
+ src/util/locale_utils.cc | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/configure b/configure
+index edf9bda..c95b804 100755
+--- a/configure
++++ b/configure
+@@ -6544,7 +6544,7 @@ fi
+ done
+ 
+ 
+-for ac_header in fcntl.h langinfo.h limits.h locale.h netdb.h netinet/in.h stddef.h stdint.h inttypes.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/stat.h sys/time.h termios.h unistd.h wchar.h wctype.h
++for ac_header in fcntl.h plibc/langinfo.h limits.h locale.h netdb.h netinet/in.h stddef.h stdint.h inttypes.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/stat.h sys/time.h termios.h unistd.h wchar.h wctype.h
+ do :
+   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+diff --git a/src/util/locale_utils.cc b/src/util/locale_utils.cc
+index 11923ff..7f1383b 100644
+--- a/src/util/locale_utils.cc
++++ b/src/util/locale_utils.cc
+@@ -40,7 +40,7 @@
+ #include <string>
+ 
+ #if HAVE_LANGINFO_H
+-#include <langinfo.h>
++#include <plibc/langinfo.h>
+ #endif
+ 
+ #include "locale_utils.h"
+-- 
+2.1.4
+

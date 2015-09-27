@@ -1,0 +1,27 @@
+From 16767c77bfea23488fbe4b24625ccabd594a5ae4 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Sun, 27 Sep 2015 16:26:25 +0100
+Subject: [PATCH] sys/select.h
+
+---
+ src/util/select.h | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/util/select.h b/src/util/select.h
+index a9394aa..eb55b0b 100644
+--- a/src/util/select.h
++++ b/src/util/select.h
+@@ -36,7 +36,9 @@
+ #include <string.h>
+ #include <errno.h>
+ #include <signal.h>
+-#include <sys/select.h>
++#include <winsock2.h>
++#include <ws2tcpip.h>
++#include <sys/types.h>
+ #include <assert.h>
+ 
+ #include "fatal_assert.h"
+-- 
+2.1.4
+

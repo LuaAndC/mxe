@@ -1,0 +1,55 @@
+From 3a384db54e20f31aa4737c7abe6f7df2b0b49056 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Sun, 27 Sep 2015 15:48:43 +0100
+Subject: [PATCH] netdb.h -> winsock2.h + ws2tcpip.h
+
+---
+ configure                   | 2 +-
+ src/frontend/mosh-server.cc | 3 ++-
+ src/network/network.cc      | 3 ++-
+ 3 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/configure b/configure
+index c95b804..ba27ef9 100755
+--- a/configure
++++ b/configure
+@@ -6544,7 +6544,7 @@ fi
+ done
+ 
+ 
+-for ac_header in fcntl.h plibc/langinfo.h limits.h locale.h netdb.h netinet/in.h stddef.h stdint.h inttypes.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/stat.h sys/time.h termios.h unistd.h wchar.h wctype.h
++for ac_header in fcntl.h plibc/langinfo.h limits.h locale.h winsock2.h ws2tcpip.h netinet/in.h stddef.h stdint.h inttypes.h stdlib.h string.h sys/ioctl.h sys/resource.h sys/socket.h sys/stat.h sys/time.h termios.h unistd.h wchar.h wctype.h
+ do :
+   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+diff --git a/src/frontend/mosh-server.cc b/src/frontend/mosh-server.cc
+index 76ed2ed..a264003 100644
+--- a/src/frontend/mosh-server.cc
++++ b/src/frontend/mosh-server.cc
+@@ -51,7 +51,8 @@
+ #include <utempter.h>
+ #endif
+ #include <sys/socket.h>
+-#include <netdb.h>
++#include <winsock2.h>
++#include <ws2tcpip.h>
+ #include <time.h>
+ #include <sys/stat.h>
+ 
+diff --git a/src/network/network.cc b/src/network/network.cc
+index 4658ea8..8397b21 100644
+--- a/src/network/network.cc
++++ b/src/network/network.cc
+@@ -37,7 +37,8 @@
+ #ifdef HAVE_SYS_UIO_H
+ #include <sys/uio.h>
+ #endif
+-#include <netdb.h>
++#include <winsock2.h>
++#include <ws2tcpip.h>
+ #include <netinet/in.h>
+ #include <assert.h>
+ #include <errno.h>
+-- 
+2.1.4
+
