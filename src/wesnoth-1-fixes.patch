@@ -1,0 +1,201 @@
+This file is part of MXE.
+See index.html for further information.
+
+From 6039c4dd2f9e3475967e861b218ecc1adccba47e Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Mon, 19 Oct 2015 01:23:38 +0200
+Subject: [PATCH] cmake_policy CMP0017
+
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d1b3e36..dccaf6a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -9,6 +9,8 @@
+ # set minimum version
+ cmake_minimum_required(VERSION 2.6.0)
+ 
++cmake_policy(SET CMP0017 NEW)
++
+ include(CheckCXXCompilerFlag)
+ 
+ if(COMMAND cmake_policy)
+-- 
+1.7.10.4
+
+
+From f3a1494a9c0f3fd82a1219aa86fa1f3c9a67b396 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Mon, 19 Oct 2015 01:59:39 +0200
+Subject: [PATCH] respect CMAKE_MODULE_PATH provided by user
+
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index dccaf6a..b7074a5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -20,7 +20,7 @@ endif(COMMAND cmake_policy)
+ set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
+ 
+ # use our own version of FindBoost.cmake and other Find* scripts
+-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
++set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake)
+ 
+ find_package(SDL 1.2.7 REQUIRED)
+ find_package(Boost 1.36 REQUIRED COMPONENTS iostreams program_options regex system)
+@@ -692,7 +692,7 @@ install(FILES l10n-track DESTINATION ${DATADIR})
+ #
+ 
+ configure_file(
+-	"${CMAKE_MODULE_PATH}/uninstall.cmake.in"
++	"${CMAKE_SOURCE_DIR}/cmake/uninstall.cmake.in"
+ 	"${CMAKE_CURRENT_BINARY_DIR}/uninstall.cmake"
+ 	IMMEDIATE @ONLY
+ )
+diff --git a/doc/man/CMakeLists.txt b/doc/man/CMakeLists.txt
+index 2eb79b6..782f1e5 100644
+--- a/doc/man/CMakeLists.txt
++++ b/doc/man/CMakeLists.txt
+@@ -23,7 +23,7 @@ if(ENABLE_POT_UPDATE_TARGET)
+ 		COMMAND ${CMAKE_COMMAND}
+ 			-DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+ 			-DMANPAGES="${ALL_MANPAGES}"
+-			-P "${CMAKE_MODULE_PATH}/po4a-man.cmake"
++			-P "${CMAKE_SOURCE_DIR}/cmake/po4a-man.cmake"
+ 		DEPENDS
+ 			${CMAKE_CURRENT_SOURCE_DIR}/wesnoth.6
+ 			${CMAKE_CURRENT_SOURCE_DIR}/wesnothd.6
+diff --git a/doc/manual/CMakeLists.txt b/doc/manual/CMakeLists.txt
+index 3179de3..7f19373 100644
+--- a/doc/manual/CMakeLists.txt
++++ b/doc/manual/CMakeLists.txt
+@@ -83,7 +83,7 @@ if(ENABLE_POT_UPDATE_TARGET)
+ 			COMMAND ${CMAKE_COMMAND}
+ 				-DSOURCE="manual.${LINGUA}.xml"
+ 				-DCMD="${CMD}"
+-				-P "${CMAKE_MODULE_PATH}/po4a-manual.cmake"
++				-P "${CMAKE_SOURCE_DIR}/cmake/po4a-manual.cmake"
+ 			COMMAND ${CMAKE_COMMAND} -E remove manual.${LINGUA}.xml
+ 			DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/manual.${LINGUA}.xml
+ 			COMMENT "[update-po4a-manual ${LINGUA}] Building ${LINGUA}.html."
+-- 
+1.7.10.4
+
+
+From 39ddd514315e35681f9c675ffb061df63ad15eb2 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Mon, 19 Oct 2015 02:59:09 +0200
+Subject: [PATCH] don't declare LUA_USE_POSIX
+
+With LUA_USE_POSIX, file src/lua/lauxlib.cpp tries
+to include <sys/wait.h> which doesn't exist.
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b7074a5..1ad9526 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -39,8 +39,10 @@ if(NOT MSVC)
+ 	exec_program(${SDL_CONFIG} ARGS "--cflags" OUTPUT_VARIABLE SDL_CFLAGS)
+ 	add_definitions(${SDL_CFLAGS})
+ 
+-	# Use the safer `mkstemp' instead of `tmpnam' on POSIX systems.
+-	add_definitions(-DLUA_USE_POSIX)
++	if(NOT MINGW)
++		# Use the safer `mkstemp' instead of `tmpnam' on POSIX systems.
++		add_definitions(-DLUA_USE_POSIX)
++	endif(NOT MINGW)
+ endif(NOT MSVC)
+ 
+ if(MSVC)
+-- 
+1.7.10.4
+
+
+From f1023c3ad843f39a73f0ca11e51946798b814320 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Mon, 19 Oct 2015 03:00:53 +0200
+Subject: [PATCH] do not set -Werror
+
+With -Werror compilation fails with the following messages:
+
+1. font.cpp:524:76: warning: ignoring return value of 'FriBidiLevel ...
+
+2. image.hpp:30:12: error: 'image::tile_size' defined but not used
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1ad9526..9de1998 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -248,15 +248,6 @@ check_compiler_has_flag(CXX_FLAGS_PROJECT "-Wall" HAS_COMPILER_FLAG_WALL)
+ endif(NOT MSVC)
+ 
+ 
+-### Set strict compiler flags.
+-
+-set(CXX_FLAGS_STRICT_COMPILATION)
+-check_compiler_has_flag(
+-	CXX_FLAGS_STRICT_COMPILATION
+-	"-Werror"
+-	HAS_COMPILER_FLAG_WERROR
+-)
+-
+ # The current unit test code breaks strict aliasing with g++ 4.4.
+ check_compiler_has_flag(
+ 	CXX_FLAGS_STRICT_COMPILATION
+-- 
+1.7.10.4
+
+
+From 218981336021c67144d439ae16f83eed4799b7c5 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Mon, 19 Oct 2015 03:03:01 +0200
+Subject: [PATCH] link against z and bz2 explicitly
+
+libboost_iostreams uses these libs but doesn't have .pc file
+
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 8b09e30..6f078e0 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -80,6 +80,8 @@ else(MSVC)
+ 		${Boost_REGEX_LIBRARY}
+ 		${Boost_PROGRAM_OPTIONS_LIBRARY}
+ 		${LIBINTL_LIBRARIES}
++		bz2
++		z
+ 	)
+ endif(MSVC)
+ 
+-- 
+1.7.10.4
+
+
+From 3ffdf428659104ec5fca4063de75866bf27564b8 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Mon, 19 Oct 2015 03:47:34 +0200
+Subject: [PATCH] enable windows_tray_notification.cpp on MINGW
+
+fix linking error
+
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 6f078e0..e90f843 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -978,12 +978,12 @@ set(libwesnoth-game_STAT_SRC
+ )
+ 
+ # On windows only, this file needs to be linked, as its header is included #ifdef win32.
+-if(MSVC)
++if(MSVC OR MINGW)
+ 	set(libwesnoth-game_STAT_SRC
+ 		${libwesnoth-game_STAT_SRC}
+ 		windows_tray_notification.cpp
+ 	)
+-endif(MSVC)
++endif(MSVC OR MINGW)
+ 
+ if(ENABLE_GAME AND ENABLE_TESTS)
+ 	set(libwesnoth-game_STAT_SRC
+-- 
+1.7.10.4
+
