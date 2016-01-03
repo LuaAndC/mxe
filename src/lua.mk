@@ -75,8 +75,7 @@ define $(PKG)_BUILD_SHARED
 endef
 
 define $(PKG)_BUILD_$(BUILD)
-    $(MAKE) -C '$(1)/src' -j '$(JOBS)' \
-        PLAT=$(shell ([ `uname -s` == Darwin ] && echo "macosx") || echo `uname -s` | tr '[:upper:]' '[:lower:]')
+    $(MAKE) -C '$(1)/src' -j '$(JOBS)' PLAT=generic
     $(INSTALL) '$(1)/src/lua' '$(PREFIX)/bin/$(BUILD)-lua'
     ln -sf '$(PREFIX)/bin/$(BUILD)-lua' '$(PREFIX)/$(BUILD)/bin/lua'
     $(INSTALL) '$(1)/src/luac' '$(PREFIX)/bin/$(BUILD)-luac'
