@@ -1,0 +1,329 @@
+This file is part of MXE.
+See index.html for further information.
+
+Contains ad hoc patches for cross building.
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Fri, 8 Jan 2016 18:02:33 +0100
+Subject: [PATCH] do not create md5global.h if it exists
+
+md5global.h is created by makemd5 tool.
+I copy md5global.h from mxe/src/cyrus-sasl-md5global.h
+
+diff --git a/include/Makefile.in b/include/Makefile.in
+index 1111111..2222222 100644
+--- a/include/Makefile.in
++++ b/include/Makefile.in
+@@ -645,8 +645,7 @@ uninstall-am: uninstall-frameheaderDATA uninstall-saslincludeHEADERS
+ 
+ 
+ md5global.h: makemd5
+-	-rm -f md5global.h
+-	./makemd5 md5global.h
++	if [ ! -f md5global.h ]; then ./makemd5 md5global.h; fi
+ 
+ # Tell versions [3.59,3.63) of GNU make to not export all variables.
+ # Otherwise a system limit (for SysV at least) may be exceeded.
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Fri, 8 Jan 2016 18:39:47 +0100
+Subject: [PATCH] implement fcntl, F_GETFL in checkpw.c for WIN32
+
+sys/socket.h -> winsock.h
+sys/un.h -> hack
+
+diff --git a/lib/checkpw.c b/lib/checkpw.c
+index 1111111..2222222 100644
+--- a/lib/checkpw.c
++++ b/lib/checkpw.c
+@@ -70,8 +70,11 @@
+ #include <netdb.h>
+ #include <netinet/in.h>
+ #include <sys/un.h>
++#include <sys/socket.h>
+ #else
+ #include <string.h>
++#include <winsock.h>
++#include <windows.h>
+ #endif
+ 
+ #include <limits.h>
+@@ -88,8 +91,17 @@
+ #if defined(HAVE_PWCHECK) || defined(HAVE_SASLAUTHD) || defined(HAVE_AUTHDAEMON)
+ # include <errno.h>
+ # include <sys/types.h>
+-# include <sys/socket.h>
+-# include <sys/un.h>
++# ifdef WIN32
++   // source: http://miniupnp.tuxfamily.org/forum/viewtopic.php?t=553
++#  define UNIX_PATH_LEN   108
++#  include <stdint.h>
++   struct sockaddr_un {
++     uint16_t sun_family;
++     char     sun_path[UNIX_PATH_LEN];
++   };
++# else
++#  include <sys/un.h>
++# endif
+ # ifdef HAVE_UNISTD_H
+ #  include <unistd.h>
+ # endif
+@@ -866,6 +878,11 @@ static int saslauthd_verify_password(sasl_conn_t *conn,
+ 
+ static int authdaemon_blocking(int fd, int block)
+ {
++#ifdef WIN32
++    // http://stackoverflow.com/a/15729622
++    u_long block_ = block;
++    ioctlsocket(fd, FIONBIO, &block_);
++#else
+     int f, r;
+ 
+     /* Get the fd's blocking bit. */
+@@ -892,6 +909,7 @@ static int authdaemon_blocking(int fd, int block)
+ 
+     /* Success. */
+     return 0;
++#endif
+ }
+ 
+ static int authdaemon_connect(sasl_conn_t *conn, const char *path)
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Fri, 8 Jan 2016 20:21:46 +0100
+Subject: [PATCH] solve getopt lib conflict
+
+saslutil.c: do not include internal getopt
+saslutil.c:692:5: error: conflicting types for 'getopt'
+
+checkpw.c: rename getopt to go
+error: conflicting types for 'getopt'
+include/getopt.h: previous declaration of 'getopt' was here
+extern int getopt(int nargc, char * const *nargv, const char *options);
+
+diff --git a/lib/checkpw.c b/lib/checkpw.c
+index 1111111..2222222 100644
+--- a/lib/checkpw.c
++++ b/lib/checkpw.c
+@@ -661,7 +661,7 @@ static int saslauthd_verify_password(sasl_conn_t *conn,
+     char *query_end = query;
+     int s;
+     struct sockaddr_un srvaddr;
+-    sasl_getopt_t *getopt;
++    sasl_getopt_t *go;
+     void *context;
+     char pwpath[sizeof(srvaddr.sun_path)];
+     const char *p = NULL;
+@@ -671,8 +671,8 @@ static int saslauthd_verify_password(sasl_conn_t *conn,
+ #endif
+ 
+     /* check to see if the user configured a rundir */
+-    if (_sasl_getcallback(conn, SASL_CB_GETOPT, &getopt, &context) == SASL_OK) {
+-	getopt(context, NULL, "saslauthd_path", &p, NULL);
++    if (_sasl_getcallback(conn, SASL_CB_GETOPT, &go, &context) == SASL_OK) {
++	go(context, NULL, "saslauthd_path", &p, NULL);
+     }
+     if (p) {
+ 	strncpy(pwpath, p, sizeof(pwpath));
+@@ -1052,15 +1052,15 @@ static int authdaemon_verify_password(sasl_conn_t *conn,
+ 				      const char *user_realm __attribute__((unused)))
+ {
+     const char *p = NULL;
+-    sasl_getopt_t *getopt;
++    sasl_getopt_t *go;
+     void *context;
+     int result = SASL_FAIL;
+     char *query = NULL;
+     int sock = -1;
+ 
+     /* check to see if the user configured a rundir */
+-    if (_sasl_getcallback(conn, SASL_CB_GETOPT, &getopt, &context) == SASL_OK) {
+-	getopt(context, NULL, "authdaemond_path", &p, NULL);
++    if (_sasl_getcallback(conn, SASL_CB_GETOPT, &go, &context) == SASL_OK) {
++	go(context, NULL, "authdaemond_path", &p, NULL);
+     }
+     if (!p) {
+ 	/*
+diff --git a/lib/saslutil.c b/lib/saslutil.c
+index 1111111..2222222 100644
+--- a/lib/saslutil.c
++++ b/lib/saslutil.c
+@@ -607,7 +607,7 @@ LOWERCASE:
+     return (0);
+ }
+ 
+-#ifdef WIN32
++#ifdef _MSC_VER
+ /***************************************************************************** 
+  * 
+  *  MODULE NAME : GETOPT.C 
+@@ -807,6 +807,8 @@ const char *prompt;
+ 	return(pbuf);
+ }
+ 
++#else
+ 
++#include <getopt.h>
+ 
+-#endif /* WIN32 */
++#endif
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Fri, 8 Jan 2016 23:15:41 +0100
+Subject: [PATCH] run ranlib
+
+fix errors when linking utils:
+
+../lib/.libs/libsasl2.a: error adding symbols:
+Archive has no index; run ranlib to add one
+
+../sasldb/.libs/libsasldb.a: error adding symbols:
+Archive has no index; run ranlib to add one
+
+diff --git a/lib/Makefile.in b/lib/Makefile.in
+index 1111111..2222222 100644
+--- a/lib/Makefile.in
++++ b/lib/Makefile.in
+@@ -692,6 +692,7 @@ libsasl2.a: libsasl2.la $(SASL_STATIC_OBJS)
+ 	esac; done; dependency_libs=""; done; \
+ 	sed -e "/^dependency_libs=/s%=.*%='$${depdirs}$${deplibs}'%" \
+ 	libsasl2.la >TMP.$$ && mv TMP.$$ libsasl2.la
++	$(RANLIB) .libs/$@
+ 	rm -f $@
+ 	ln -s .libs/$@ $@
+ 
+diff --git a/sasldb/Makefile.in b/sasldb/Makefile.in
+index 1111111..2222222 100644
+--- a/sasldb/Makefile.in
++++ b/sasldb/Makefile.in
+@@ -593,6 +593,7 @@ uninstall-am:
+ 
+ libsasldb.a: libsasldb.la $(SASL_DB_BACKEND_STATIC)
+ 	$(AR) cru .libs/$@ $(SASL_DB_BACKEND_STATIC)
++	$(RANLIB) .libs/$@
+ 
+ # Tell versions [3.59,3.63) of GNU make to not export all variables.
+ # Otherwise a system limit (for SysV at least) may be exceeded.
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Sat, 9 Jan 2016 00:02:46 +0100
+Subject: [PATCH] disable dllimport and dllexport
+
+Fix linking errors in static build:
+
+i686-w64-mingw32.static-gcc -Wall -W -g -O2 -L/mxe/usr/i686-w64-mingw32.static/lib32 -Wl,-rpath,/mxe/usr/i686-w64-mingw32.static/lib32 -o dbconverter-2.exe dbconverter-2.o ../sasldb/.libs/libsasldb.a -lssl -L/mxe/usr/i686-w64-mingw32.static/lib -lcrypto -lws2_32 -lgdi32 -lcrypt32 -lz ../lib/.libs/libsasl2.a -lssl -lcrypto -lws2_32 -lgdi32 -lcrypt32 -lz -lssl -L/mxe/usr/i686-w64-mingw32.static/lib -lcrypto -lws2_32 -lgdi32 -lcrypt32 -lz
+dbconverter-2.o: In function `main':
+/mxe/tmp-cyrus-sasl-i686-w64-mingw32.static/cyrus-sasl-2.1.26/utils/dbconverter-2.c:395: undefined reference to `_imp__sasl_server_init'
+/mxe/tmp-cyrus-sasl-i686-w64-mingw32.static/cyrus-sasl-2.1.26/utils/dbconverter-2.c:401: undefined reference to `_imp__sasl_server_new'
+/mxe/tmp-cyrus-sasl-i686-w64-mingw32.static/cyrus-sasl-2.1.26/utils/dbconverter-2.c:414: undefined reference to `_imp___sasl_check_db'
+
+diff --git a/include/prop.h b/include/prop.h
+index 1111111..2222222 100644
+--- a/include/prop.h
++++ b/include/prop.h
+@@ -32,7 +32,7 @@
+  * exported.  */
+ /* Under Unix, life is simpler: we just need to mark library functions
+  * as extern.  (Technically, we don't even have to do that.) */
+-#ifdef WIN32
++#if 0
+ # ifdef LIBSASL_EXPORTS
+ #  define LIBSASL_API  extern __declspec(dllexport)
+ # else /* LIBSASL_EXPORTS */
+@@ -43,7 +43,7 @@
+ #endif /* WIN32 */
+ 
+ /* Same as above, but used during a variable declaration. */
+-#ifdef WIN32
++#if 0
+ # ifdef LIBSASL_EXPORTS
+ #  define LIBSASL_VAR  extern __declspec(dllexport)
+ # else /* LIBSASL_EXPORTS */
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Sat, 9 Jan 2016 00:57:40 +0100
+Subject: [PATCH] provide implementation of writev for retry_writev
+
+Fix linking error:
+
+checkpw.c:491: undefined reference to `writev'
+
+diff --git a/lib/checkpw.c b/lib/checkpw.c
+index 1111111..2222222 100644
+--- a/lib/checkpw.c
++++ b/lib/checkpw.c
+@@ -455,6 +455,30 @@ static int write_wait(int fd, unsigned delta)
+     return -1;
+ }
+ 
++// from plugins/ntlm.c
++ssize_t mywritev (int fd, const struct iovec *iov, size_t iovcnt)
++{
++    ssize_t nwritten;		/* amount written */
++    ssize_t nbytes;
++    size_t i;
++
++    nbytes = 0;
++
++    for (i = 0; i < iovcnt; i++) {
++	if ((nwritten = send (fd, iov[i].iov_base, iov[i].iov_len, 0)) == SOCKET_ERROR) {
++/* Unless socket is nonblocking, we should always write everything */
++	    return (-1);
++	}
++
++	nbytes += nwritten;
++
++	if (nwritten < iov[i].iov_len) {
++	    break;
++	}
++    }
++    return (nbytes);
++}
++
+ /*
+  * Keep calling the writev() system call with 'fd', 'iov', and 'iovcnt'
+  * until all the data is written out or an error/timeout occurs.
+@@ -488,7 +512,7 @@ static int retry_writev(int fd, struct iovec *iov, int iovcnt, unsigned delta)
+ 	    if (write_wait(fd, delta))
+ 		return -1;
+ 	}
+-	n = writev(fd, iov, iovcnt > iov_max ? iov_max : iovcnt);
++	n = mywritev(fd, iov, iovcnt > iov_max ? iov_max : iovcnt);
+ 	if (n == -1) {
+ 	    if (errno == EINVAL && iov_max > 10) {
+ 		iov_max /= 2;
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Sat, 9 Jan 2016 02:22:29 +0100
+Subject: [PATCH] disable saslauthd
+
+
+diff --git a/Makefile.in b/Makefile.in
+index 1111111..2222222 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -105,7 +105,7 @@ AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
+ ETAGS = etags
+ CTAGS = ctags
+ DIST_SUBDIRS = include sasldb lib plugins utils doc man pwcheck sample \
+-	java saslauthd
++	java
+ DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+ distdir = $(PACKAGE)-$(VERSION)
+ top_distdir = $(distdir)
+@@ -353,7 +353,7 @@ AUTOMAKE_OPTIONS = 1.7
+ @JAVA_TRUE@JAV = java
+ @MACOSX_FALSE@INSTALLOSX = 
+ @MACOSX_TRUE@INSTALLOSX = install-exec-local-osx
+-SUBDIRS = include sasldb lib plugins utils doc man $(PWC) $(SAM) $(JAV) $(SAD)
++SUBDIRS = include sasldb lib plugins utils doc man $(PWC) $(SAM) $(JAV)
+ EXTRA_DIST = config cmulocal win32 mac dlcompat-20010505 NTMakefile INSTALL.TXT \
+     libsasl2.pc.in
+ 
