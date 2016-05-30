@@ -382,6 +382,7 @@ end
 local function gitInit()
     os.execute('mkdir -p ./usr')
     os.execute(GIT .. 'init --quiet')
+    os.execute(GIT .. 'config --global gc.auto 0')
 end
 
 local function gitTag(name)
