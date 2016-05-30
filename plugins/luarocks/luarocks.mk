@@ -57,6 +57,7 @@ define $(PKG)_BUILD_SHARED
     chmod 0755 '$(PREFIX)/$(TARGET)/bin/luarocks'
     # remove lock dir if it exists after previous failed installation
     -rmdir "$(PREFIX)/$(TARGET)/lib/luarocks/lock.dir"
+    touch "$(PREFIX)/$(TARGET)/lib/luarocks/.gitkeep"
 
     # symlink
     ln -sf '$(PREFIX)/$(TARGET)/bin/luarocks' '$(PREFIX)/bin/$(TARGET)-luarocks'
