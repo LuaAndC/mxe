@@ -1366,3 +1366,24 @@ index 1111111..2222222 100644
  # ifndef GSDLLAPI
  #  define GSDLLAPI __stdcall
  # endif
+
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Boris Nagaev <bnagaev@gmail.com>
+Date: Tue, 19 Jul 2016 23:58:16 +0300
+Subject: [PATCH] fix noncontribmakefiles if srcdir!=dstdir
+
+See https://github.com/mxe/mxe/pull/1382#issuecomment-233653542
+
+diff --git a/configure.ac b/configure.ac
+index 1111111..2222222 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -2054,7 +2054,7 @@ if test x$enable_threadsafe = xyes; then
+   NTS_EXCLUDES=`echo "$NTS_EXCLUDES" | tr " " "\n" | sort | uniq | tr "\n" " "`
+ fi # x$enable_threadsafe = xyes
+ 
+-noncontribmakefiles=`find $srcdir -name '*.mak' -print | grep -v '^\./contrib/'`
++noncontribmakefiles=`find $srcdir -name '*.mak' -print | grep -v '/contrib/'`
+ 
+ # No need to include opvp/oprp driver without iconv/libiconv.
+ if test -n "$P_DEVS0"; then
