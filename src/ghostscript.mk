@@ -18,10 +18,10 @@ define $(PKG)_UPDATE
 endef
 
 define $(PKG)_BUILD
-    cd '$(1)' && rm -rf freetype jpeg lcms2 libpng openjpeg tiff zlib
-    cd '$(1)' && $(LIBTOOLIZE) --force --copy --install
-    cd '$(1)' && autoconf -f -i
-    cd '$(1)' && ./configure \
+    cd '$(SOURCE_DIR)' && rm -rf freetype jpeg lcms2 libpng openjpeg tiff zlib
+    cd '$(SOURCE_DIR)' && $(LIBTOOLIZE) --force --copy --install
+    cd '$(SOURCE_DIR)' && autoconf -f -i
+    cd '$(BUILD_DIR)' && $(SOURCE_DIR)/configure \
         $(MXE_CONFIGURE_OPTS) \
         --disable-contrib \
         --enable-threading \
@@ -42,20 +42,20 @@ define $(PKG)_BUILD
         --without-x \
         --with-drivers=ALL \
         --with-memory-alignment=$(if $(filter x86_64-%,$(TARGET)),8,4)
-    $(MAKE) -C '$(1)' -j 1 $(if $(BUILD_STATIC),gs.a,so)
+    $(MAKE) -C '$(BUILD_DIR)' -j 1 $(if $(BUILD_STATIC),gs.a,so)
 
     $(INSTALL) -d '$(PREFIX)/$(TARGET)/include/ghostscript'
-    $(INSTALL) '$(1)/devices/gdevdsp.h' '$(PREFIX)/$(TARGET)/include/ghostscript/gdevdsp.h'
-    $(INSTALL) '$(1)/base/gserrors.h' '$(PREFIX)/$(TARGET)/include/ghostscript/gserrors.h'
-    $(INSTALL) '$(1)/psi/iapi.h' '$(PREFIX)/$(TARGET)/include/ghostscript/iapi.h'
-    $(INSTALL) '$(1)/psi/ierrors.h' '$(PREFIX)/$(TARGET)/include/ghostscript/ierrors.h'
+    $(INSTALL) '$(SOURCE_DIR)/devices/gdevdsp.h' '$(PREFIX)/$(TARGET)/include/ghostscript/gdevdsp.h'
+    $(INSTALL) '$(SOURCE_DIR)/base/gserrors.h' '$(PREFIX)/$(TARGET)/include/ghostscript/gserrors.h'
+    $(INSTALL) '$(SOURCE_DIR)/psi/iapi.h' '$(PREFIX)/$(TARGET)/include/ghostscript/iapi.h'
+    $(INSTALL) '$(SOURCE_DIR)/psi/ierrors.h' '$(PREFIX)/$(TARGET)/include/ghostscript/ierrors.h'
 
     $(INSTALL) -d '$(PREFIX)/$(TARGET)/bin'
     $(INSTALL) -d '$(PREFIX)/$(TARGET)/lib'
     $(if $(BUILD_STATIC),\
-        $(INSTALL) '$(1)/gs.a' '$(PREFIX)/$(TARGET)/lib/libgs.a',\
-        $(INSTALL) '$(1)/sobin/libgs-9.dll' '$(PREFIX)/$(TARGET)/bin/libgs-9.dll' && \
-        $(INSTALL) '$(1)/sobin/libgs.dll.a' '$(PREFIX)/$(TARGET)/lib/libgs.dll.a')
+        $(INSTALL) '$(BUILD_DIR)/gs.a' '$(PREFIX)/$(TARGET)/lib/libgs.a',\
+        $(INSTALL) '$(BUILD_DIR)/sobin/libgs-9.dll' '$(PREFIX)/$(TARGET)/bin/libgs-9.dll' && \
+        $(INSTALL) '$(BUILD_DIR)/sobin/libgs.dll.a' '$(PREFIX)/$(TARGET)/lib/libgs.dll.a')
 
     $(INSTALL) -d '$(PREFIX)/$(TARGET)/lib/pkgconfig'
     (echo 'Name: ghostscript'; \
@@ -69,6 +69,6 @@ define $(PKG)_BUILD
 
     '$(TARGET)-gcc' \
         -W -Wall -Werror -pedantic \
-        '$(2).c' -o '$(PREFIX)/$(TARGET)/bin/test-ghostscript.exe' \
+        '$(TEST_FILE)' -o '$(PREFIX)/$(TARGET)/bin/test-ghostscript.exe' \
         `$(TARGET)-pkg-config --cflags --libs ghostscript`
 endef
