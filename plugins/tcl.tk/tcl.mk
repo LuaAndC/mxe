@@ -23,6 +23,6 @@ define $(PKG)_BUILD
         --enable-threads \
         $(if $(findstring x86_64,$(TARGET)), --enable-64bit) \
         CFLAGS='-D__MINGW_EXCPT_DEFINE_PSDK'
-    $(MAKE) -C '$(1)/win' install install-private-headers $(MXE_DISABLE_PROGRAMS)
+    $(MAKE) -C '$(1)/win' install install-private-headers # $(MXE_DISABLE_PROGRAMS)
 endef
 

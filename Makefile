@@ -77,9 +77,7 @@ space := $(null) $(null)
 repeat = $(subst x,$(1),$(subst $(space),,$(call int_encode,$(2))))
 
 MXE_DISABLE_DOC_OPTS = \
-    ac_cv_prog_HAVE_DOXYGEN="false" \
-    --{docdir,infodir,mandir,with-html-dir}='$(BUILD_DIR).sink' \
-    --disable-doxygen
+    ac_cv_prog_HAVE_DOXYGEN="false"
 
 MXE_CONFIGURE_OPTS = \
     --host='$(TARGET)' \
